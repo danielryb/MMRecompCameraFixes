@@ -48,7 +48,12 @@ s32 func_800CB950(Camera* camera);
 /**
  * Used for targeting
  */
-RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
+RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
+    // @mod
+    // TODO Replace static prev_targeting_held and timer4 with new fields in rwData.
+    static bool prev_targeting_held = false;
+    static s16 timer4 = 0; // @mod Used to check if z-target can be quit. Mirrors timer2 values during z-target in unmodified function.
+
     Vec3f* eye = &camera->eye;
     Vec3f* at = &camera->at;
     Vec3f* eyeNext = &camera->eyeNext;
@@ -98,11 +103,6 @@ RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
     OLib_Vec3fDiffToVecGeo(&sp80, at, eye);
     OLib_Vec3fDiffToVecGeo(&sp78, at, eyeNext);
     Camera_GetFocalActorPos(&spA4, camera);
-
-    // @mod
-    // TODO Replace static prev_targeting_held and timer4 with new fields in rwData.
-    static bool prev_targeting_held = false;
-    static s16 timer4 = 0; // @mod Used to check if z-target can be quit. Mirrors timer2 values during z-target in unmodified function.
 
     switch (camera->animState) {
         case 20:
