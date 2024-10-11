@@ -48,7 +48,7 @@ s32 func_800CB950(Camera* camera);
 /**
  * Used for targeting
  */
-RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
+RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
     Vec3f* eye = &camera->eye;
     Vec3f* at = &camera->at;
     Vec3f* eyeNext = &camera->eyeNext;
