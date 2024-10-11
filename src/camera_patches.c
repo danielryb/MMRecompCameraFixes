@@ -1,11 +1,6 @@
 #include "modding.h"
 #include "global.h"
 
-RECOMP_IMPORT("*", int recomp_printf(const char* fmt, ...));
-
-extern s32 sUpdateCameraDirection;
-extern s32 sCameraInterfaceFlags;
-
 typedef struct {
     /* 0x0 */ s16 val;
     /* 0x2 */ s16 param;
@@ -24,13 +19,11 @@ typedef struct {
 } CameraSetting;
 
 extern CameraSetting sCameraSettings[];
+extern s32 sUpdateCameraDirection;
+extern s32 sCameraInterfaceFlags;
+
 s32 Camera_GetFocalActorPos(Vec3f* dst, Camera* camera);
 f32 Camera_GetFocalActorHeight(Camera* camera);
-f32 Camera_Vec3fMagnitude(Vec3f* vec);
-f32 Camera_GetFloorY(Camera* camera, Vec3f* pos);
-f32 Camera_GetFloorYNorm(Camera* camera, Vec3f* floorNorm, Vec3f* chkPos, s32* bgId);
-s16 Camera_ScaledStepToFloorS(s16 target, s16 cur, f32 stepScale, s16 minDiff);
-s32 func_800CBC84(Camera* camera, Vec3f* from, CameraCollision* to, s32 arg3);
 void func_800CBFA4(Camera* camera, Vec3f* arg1, Vec3f* arg2, s32 arg3);
 s32 Camera_CalcAtForParallel(Camera* camera, VecGeo* arg1, f32 yOffset, f32 xzOffsetMax, f32* focalActorPosY,
                              s16 flags);
@@ -38,38 +31,17 @@ Vec3s* Camera_GetBgCamOrActorCsCamFuncData(Camera* camera, u32 camDataId);
 s32 Camera_IsClimbingLedge(Camera* camera);
 void Camera_ScaledStepToCeilVec3f(Vec3f* target, Vec3f* cur, f32 xzStepScale, f32 yStepScale, f32 minDiff);
 void Camera_SetFocalActorAtOffset(Camera* camera, Vec3f* focalActorPos);
-s32 Camera_CalcAtForHorse(Camera* camera, VecGeo* eyeAtDir, f32 yOffset, f32* yPosOffset, s16 calcSlope);
-f32 Camera_fabsf(f32 f);
-f32 Camera_GetRunSpeedLimit(Camera* camera);
-
-#define CAM_CHANGE_SETTING_0 (1 << 0)
-#define CAM_CHANGE_SETTING_1 (1 << 1)
-#define CAM_CHANGE_SETTING_2 (1 << 2)
-#define CAM_CHANGE_SETTING_3 (1 << 3)
-
-extern SwingAnimation D_801EDC30[4];
 s32 Camera_CalcAtDefault(Camera* camera, VecGeo* eyeAtDir, f32 yOffset, s16 calcSlope);
-s32 Camera_CalcAtForNormal1(Camera* camera, VecGeo* arg1, f32 yOffset, f32 forwardDist);
 s32 Camera_CalcAtForScreen(Camera* camera, VecGeo* eyeAtDir, f32 yOffset, f32* focalActorPosY, f32 deltaYMax);
-s16 Camera_CalcDefaultPitch(Camera* camera, s16 pitch, s16 flatSurfacePitchTarget, s16 slopePitchAdj);
-void Camera_CalcDefaultSwing(Camera* camera, VecGeo* arg1, VecGeo* arg2, f32 arg3, f32 arg4, SwingAnimation* swing2,
-                             s16* flags);
-s16 Camera_CalcDefaultYaw(Camera* camera, s16 yaw, s16 target, f32 attenuationYawDiffRange,
-                          f32 attenuationYawDiffInterpParam);
-f32 Camera_ClampDist1(Camera* camera, f32 dist, f32 minDist, f32 maxDist, s16 timer);
-f32 Camera_ClampDist2(Camera* camera, f32 dist, f32 minDist, f32 maxDist, s16 timer);
 f32 Camera_ClampLerpScale(Camera* camera, f32 maxLerpScale);
 s16 Camera_GetPitchAdjFromFloorHeightDiffs(Camera* camera, s16 viewYaw, s16 shouldInit);
 f32 Camera_ScaledStepToCeilF(f32 target, f32 cur, f32 stepScale, f32 minDiff);
 s16 Camera_ScaledStepToCeilS(s16 target, s16 cur, f32 stepScale, s16 minDiff);
 void Camera_SetUpdateRatesFastYaw(Camera* camera);
-s32 func_800CB924(Camera* camera);
 s32 func_800CB950(Camera* camera);
-s32 func_800CBA7C(Camera* camera);
 
 #define GET_NEXT_RO_DATA(values) ((values++)->val)
 #define RELOAD_PARAMS(camera) ((camera->animState == 0) || (camera->animState == 10) || (camera->animState == 20))
-
 #define CAM_RODATA_UNSCALE(x) ((x)*0.01f)
 #define GET_NEXT_SCALED_RO_DATA(values) CAM_RODATA_UNSCALE(GET_NEXT_RO_DATA(values))
 
