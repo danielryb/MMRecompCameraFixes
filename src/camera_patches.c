@@ -127,6 +127,11 @@ RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
     OLib_Vec3fDiffToVecGeo(&sp78, at, eyeNext);
     Camera_GetFocalActorPos(&spA4, camera);
 
+    // @mod
+    // TODO Replace static prev_targeting_held and timer4 with new fields in rwData.
+    static bool prev_targeting_held = false;
+    static s16 timer4 = 0; // @mod Used to check if z-target can be quit. Mirrors timer2 values during z-target in unmodified function.
+
     switch (camera->animState) {
         case 20:
             if ((roData->interfaceFlags & (PARALLEL1_FLAG_3 | PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1)) == 0) {
@@ -164,6 +169,8 @@ RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
                 rwData->timer2 = 20;
             } else {
                 rwData->timer2 = 6;
+                // @mod Initiate timer4 for z-target.
+                timer4 = 6;
             }
 
             if ((camera->focalActor == &GET_PLAYER(camera->play)->actor) && (camera->mode == CAM_MODE_CHARGE)) {
@@ -198,14 +205,46 @@ RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
             rwData->unk_26 = 1;
             camera->animState = 1;
             sCameraInterfaceFlags = roData->interfaceFlags;
+
+            // @mod Reset prev_targeting_held after transition.
+            prev_targeting_held = false;
+
             break;
+    }
+
+    // @mod Change behavior for z-target only.
+    if ((roData->interfaceFlags & (PARALLEL1_FLAG_3 | PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1)) == PARALLEL1_FLAG_1) {
+        Player* player = GET_PLAYER(camera->play);
+        bool targeting_held = func_80123434(player) || player->lockOnActor != NULL;
+
+        // @mod Fix camera rotating with player if z-target gets released too fast after transition.
+        if (targeting_held &! prev_targeting_held) {
+            // @mod Reset timer2 to avoid immediate rotation, if player presses, releases and presses z-target in a very short time-window.
+            rwData->timer2 = 6;
+            rwData->unk_1E = BINANG_ROT180(camera->focalActorPosRot.rot.y) + roData->unk_22;
+        }
+
+        // @mod Maintain vanilla behavior for quitting z-target.
+        if ((timer4 == 0) && (!targeting_held)) {
+            rwData->timer2 = 0;
+        }
+
+        // @mod Decrease timer4 only in cases where timer2 would be decreased.
+        if ((timer4 > 0)
+        && (rwData->timer3 <= 0)) {
+            timer4--;
+        }
+
+        prev_targeting_held = targeting_held;
     }
 
     if (rwData->timer2 != 0) {
         switch (roData->interfaceFlags & (PARALLEL1_FLAG_3 | PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1)) {
-            case PARALLEL1_FLAG_1:
+            // case PARALLEL1_FLAG_1:
             case (PARALLEL1_FLAG_3 | PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1):
                 rwData->unk_1E = BINANG_ROT180(camera->focalActorPosRot.rot.y) + roData->unk_22;
+                // @mod Fix camera rotating with player if z-target gets released too fast after transition.
+            case PARALLEL1_FLAG_1:
                 rwData->unk_20 = roData->unk_20;
                 break;
 
@@ -400,7 +439,13 @@ RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
             func_800CBFA4(camera, at, eye, 3);
         }
 
-        // @mod Fix camera not updating input dir.
+        // if (rwData->timer2 != 0) {
+        //     sUpdateCameraDirection = true;
+        // } else {
+        //     sUpdateCameraDirection = false;
+        // }
+
+        // @mod Fix camera not updating input dir for the first few frames after transition.
         sUpdateCameraDirection = false;
     }
 
