@@ -48,7 +48,12 @@ s32 func_800CB950(Camera* camera);
 /**
  * Used for targeting
  */
-RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
+RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
+    // @mod
+    // TODO Replace static prev_targeting_held and timer4 with new fields in rwData.
+    static bool prev_targeting_held = false;
+    static s16 timer4 = 0; // @mod Used to check if z-target can be quit. Mirrors timer2 values during z-target in unmodified function.
+
     Vec3f* eye = &camera->eye;
     Vec3f* at = &camera->at;
     Vec3f* eyeNext = &camera->eyeNext;
@@ -95,14 +100,9 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
         rwData->unk_00 = roData->unk_04;
     }
 
-    OLib_Vec3fDiffToVecGeo(&sp80, at, eye);
-    OLib_Vec3fDiffToVecGeo(&sp78, at, eyeNext);
+    sp80 = OLib_Vec3fDiffToVecGeo(at, eye);
+    sp78 = OLib_Vec3fDiffToVecGeo(at, eyeNext);
     Camera_GetFocalActorPos(&spA4, camera);
-
-    // @mod
-    // TODO Replace static prev_targeting_held and timer4 with new fields in rwData.
-    static bool prev_targeting_held = false;
-    static s16 timer4 = 0; // @mod Used to check if z-target can be quit. Mirrors timer2 values during z-target in unmodified function.
 
     switch (camera->animState) {
         case 20:
@@ -131,7 +131,7 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
                 camera->dist = 2.0f * roData->unk_04;
                 sp78.r = camera->dist;
                 sp80.r = sp78.r;
-                OLib_AddVecGeoToVec3f(eye, at, &sp80);
+                *eye = OLib_AddVecGeoToVec3f(at, &sp80);
                 *eyeNext = *eye;
             }
 
@@ -167,6 +167,8 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
                 rwData->unk_00 = (bgCamFuncData->unk_0E == -1)
                                      ? roData->unk_04
                                      : CAM_RODATA_UNSCALE(bgCamFuncData->unk_0E) * focalActorHeight * yNormal;
+            // //! FAKE
+            // dummy:;
             } else {
                 rwData->unk_08 = roData->unk_14;
                 rwData->unk_00 = roData->unk_04;
@@ -227,7 +229,7 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
 
             case (PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1):
                 if (rwData->timer3 == 1) {
-                    OLib_Vec3fDiffToVecGeo(&sp88, &rwData->unk_10, &spA4);
+                    sp88 = OLib_Vec3fDiffToVecGeo(&rwData->unk_10, &spA4);
                     rwData->unk_1E = ((ABS(BINANG_SUB(sp88.yaw, sp80.yaw)) < 0x3A98) || Camera_IsClimbingLedge(camera))
                                          ? sp80.yaw
                                          : sp80.yaw + (s16)((BINANG_SUB(sp88.yaw, sp80.yaw) >> 2) * 3);
@@ -357,7 +359,7 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
             sp90.r = camera->dist;
         }
     } else {
-        OLib_Vec3fDiffToVecGeo(&sp90, at, eyeNext);
+        sp90 = OLib_Vec3fDiffToVecGeo(at, eyeNext);
         sp90.r = camera->dist;
 
         if (roData->interfaceFlags & PARALLEL1_FLAG_1) {
@@ -393,7 +395,7 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
         rwData->timer3--;
     }
 
-    OLib_AddVecGeoToVec3f(eyeNext, at, &sp90);
+    *eyeNext = OLib_AddVecGeoToVec3f(at, &sp90);
 
     if (camera->status == CAM_STATUS_ACTIVE) {
         if ((camera->play->envCtx.skyboxDisabled == 0) || (roData->interfaceFlags & PARALLEL1_FLAG_4)) {
