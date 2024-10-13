@@ -1,6 +1,11 @@
 #include "modding.h"
 #include "global.h"
 
+RECOMP_IMPORT("*", s32 is_analog_cam_enabled(void));
+RECOMP_IMPORT("*", bool is_analog_cam_active(void));
+RECOMP_IMPORT("*", VecGeo get_analog_cam_pos(void));
+RECOMP_IMPORT("*", void update_analog_cam(Camera* c));
+
 typedef struct {
     /* 0x0 */ s16 val;
     /* 0x2 */ s16 param;
@@ -48,6 +53,7 @@ s32 func_800CB950(Camera* camera);
 /**
  * Used for targeting
  */
+// @recomp Patched for analog cam.
 RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
     // @mod
     // TODO Replace static prev_targeting_held and timer4 with new fields in rwData.
@@ -393,6 +399,18 @@ RECOMP_PATCH s32 Camera_Parallel1(Camera* camera) {
 
     if (rwData->timer3 > 0) {
         rwData->timer3--;
+    }
+
+    // @recomp Update the analog camera.
+    if (is_analog_cam_enabled()) {
+        update_analog_cam(camera);
+
+        if (is_analog_cam_active()) {
+            VecGeo analog_camera_pos = get_analog_cam_pos();
+            sp90.pitch = analog_camera_pos.pitch;
+            // sp90.r = analog_camera_pos.r;
+            sp90.yaw = analog_camera_pos.yaw;
+        }
     }
 
     *eyeNext = OLib_AddVecGeoToVec3f(at, &sp90);
