@@ -104,6 +104,9 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
     static bool prev_targeting_held = false;
     static s16 timer4 = 0; // @mod Used to check if z-target can be quit. Mirrors timer2 values during z-target in unmodified function.
 
+    // @mod
+    bool isChargingDekuFlowerDive = !!(((Player*)camera->focalActor)->stateFlags3 & PLAYER_STATE3_100);
+
     switch (camera->animState) {
         case 20:
             if ((roData->interfaceFlags & (PARALLEL1_FLAG_3 | PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1)) == 0) {
@@ -212,11 +215,17 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
 
     if (rwData->timer2 != 0) {
         switch (roData->interfaceFlags & (PARALLEL1_FLAG_3 | PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1)) {
-            // case PARALLEL1_FLAG_1:
+            case PARALLEL1_FLAG_1:
+                // @mod Fix camera rotating with player if z-target gets released too fast after transition.
+                if (isChargingDekuFlowerDive) {
+                    // @mod Fix camera wiggle during dive into deku flower.
+                    rwData->unk_1E = BINANG_ROT180(camera->focalActorPosRot.rot.y) + roData->unk_22;
+                }
+                rwData->unk_20 = roData->unk_20;
+                break;
+
             case (PARALLEL1_FLAG_3 | PARALLEL1_FLAG_2 | PARALLEL1_FLAG_1):
                 rwData->unk_1E = BINANG_ROT180(camera->focalActorPosRot.rot.y) + roData->unk_22;
-                // @mod Fix camera rotating with player if z-target gets released too fast after transition.
-            case PARALLEL1_FLAG_1:
                 rwData->unk_20 = roData->unk_20;
                 break;
 
@@ -418,7 +427,12 @@ RECOMP_FORCE_PATCH s32 Camera_Parallel1(Camera* camera) {
         // }
 
         // @mod Fix camera not updating input dir for the first few frames after transition.
-        sUpdateCameraDirection = false;
+        if ((isChargingDekuFlowerDive) && (rwData->timer2 != 0)) {
+            // @mod Fix camera wiggle during dive into deku flower.
+            sUpdateCameraDirection = true;
+        } else {
+            sUpdateCameraDirection = false;
+        }
     }
 
     camera->fov = Camera_ScaledStepToCeilF(rwData->unk_08, camera->fov, camera->fovUpdateRate, 0.1f);
